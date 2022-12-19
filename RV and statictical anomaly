@@ -1,0 +1,35 @@
+//include libraries
+#include <MQL4>
+#include <Statistics>
+
+//define variables
+double buyPrice;
+double sellPrice;
+double spread;
+
+int init()
+{
+	//initialize variables
+	buyPrice = 0.0;
+	sellPrice = 0.0;
+	spread = 0.0;
+	
+	//return success
+	return(0);
+}
+
+int start()
+{
+	//get the current market quotes
+	buyPrice = MarketInfo(Symbol(),MODE_BID);
+	sellPrice = MarketInfo(Symbol(),MODE_ASK);
+	spread = sellPrice - buyPrice;
+	
+	//calculate the relative value of the current quotes
+	double relVal = (sellPrice/buyPrice) - 1.0;
+	
+	//check for anomalys in the data
+	double mean = StatisticsMean(Symbol(),0,STAT_PRICE);
+	double min = StatisticsMinimum(Symbol(),0,STAT_PRICE);
+	double max = StatisticsMaximum(Symbol(),0,STAT_PRICE);
+	if (relVal >
