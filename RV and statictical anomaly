@@ -1,35 +1,41 @@
-//include libraries
-#include <MQL4>
-#include <Statistics>
+#include <Indicator\Indicators.mqh>
+#include <Trade\Trade.mqh>
 
-//define variables
-double buyPrice;
-double sellPrice;
-double spread;
+// defining the parameters
+input ENUM_TIMEFRAMES TimeFrame = PERIOD_CURRENT;
+input int RSIPeriod = 14;
 
-int init()
+// defining the variables
+double rsi[];
+double current_price;
+
+// starting the EA
+void OnInit()
 {
-	//initialize variables
-	buyPrice = 0.0;
-	sellPrice = 0.0;
-	spread = 0.0;
-	
-	//return success
-	return(0);
+    // getting the RSI values to an array
+    ArraySetAsSeries(rsi, true);
+    ArrayResize(rsi, RSIPeriod);
+    // getting the current price
+    current_price = iClose(Symbol(), TimeFrame, 0);
 }
 
-int start()
+// analysing and making trades at each tick
+void OnTick()
 {
-	//get the current market quotes
-	buyPrice = MarketInfo(Symbol(),MODE_BID);
-	sellPrice = MarketInfo(Symbol(),MODE_ASK);
-	spread = sellPrice - buyPrice;
-	
-	//calculate the relative value of the current quotes
-	double relVal = (sellPrice/buyPrice) - 1.0;
-	
-	//check for anomalys in the data
-	double mean = StatisticsMean(Symbol(),0,STAT_PRICE);
-	double min = StatisticsMinimum(Symbol(),0,STAT_PRICE);
-	double max = StatisticsMaximum(Symbol(),0,STAT_PRICE);
-	if (relVal >
+    // RSI value
+    double rsi_value = iRSI(Symbol(), TimeFrame, RSIPeriod, PRICE_CLOSE, 0);
+    // getting the mean and standard deviation of the past prices
+    double mean_price = MathMean(iClose(Symbol(), TimeFrame, 0), RSIPeriod);
+    double std_dev = MathStdDev(iClose(Symbol(), TimeFrame, 0), RSIPeriod);
+    // checking for statistical anomalies and make trades if necessary
+    if (rsi_value < 30 && current_price < mean_price - std_dev)
+    {
+        // opening a trade due to RSI being oversold
+        OrderSend(Symbol(), OP_BUY, 1, Ask, 3, 0, 0, "My EA", 16384, 0, Green);
+    }
+    else if (rsi_value > 70 && current_price > mean_price + std_dev)
+    {
+        // if the index is overbought and price is above the mean, bot is opening the trade
+        OrderSend(Symbol(), OP_SELL, 1, Bid, 3, 0, 0, "My EA", 16384, 0, Red);
+    }
+}
